@@ -1,0 +1,232 @@
+
+    <div id="personal-data" class="container theme-showcase" role="main">
+
+      <div class="row" style="display:none" id="failed">
+        <div class="col-md-6 col-md-offset-3 text-center">
+          <h2>数据加载失败，请查看<a data-toggle="modal" data-target="#message-modal">操作提示</a>，或<a style="cursor: pointer" onclick="$('#submit-button').click();">重试</a></h2>
+        </div>
+      </div>
+
+      <div class="row" style="display:none" id="loading">
+        <div class="col-md-4 col-md-offset-4 text-center">
+          <h2>数据加载中。。</h2>
+            <div class="progress">
+              <div class="progress-bar progress-bar-striped progress-bar-success active" id="load-progress"></div>
+            </div>
+        </div>
+      </div>
+
+      <div style="display:none" id="stats">
+
+        <div class="page-header">
+          <h1>
+            <span id="user-name"> *#*的生涯 </span>
+          </h1>
+          <span class="badge" id="update-date">
+            更新时间2018-01-01
+          </span>
+          <a id='refresh-button' href='#'>点击刷新</a>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-6">
+            <div class="panel panel-info">
+              <div class="panel-heading">
+                <h3 id="level-history-title" class="panel-title" style="cursor:pointer">
+                  等级 <strong id="level"> </strong>
+                  <span class="pull-right">点击展开</span>
+                </h3>
+              </div>
+              <div id="level-history-div" class="panel-body" style="display:none">
+                <canvas id="level-history-chart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="panel panel-info">
+              <div class="panel-heading">
+                <h3 id="endor-level-history-title" class="panel-title" style="cursor:pointer">
+                  赞赏等级 <strong id="endor-level"> </strong>
+                  <span class="pull-right">点击展开</span>
+                </h3>
+              </div>
+              <div id="endor-level-history-div" class="panel-body" style="display:none">
+                <canvas id="endor-level-history-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-info">
+          <div class="panel-heading">
+            <h3 id="endor-history-title" class="panel-title" style="cursor:pointer">
+              赞赏数量 <strong id="endor-total"> </strong>
+              <span class="pull-right">点击展开</span>
+            </h3>
+          </div>
+          <div id="endor-history-div" class="panel-body" style="display:none">
+            <div class="row">
+              <div class="col-sm-6">
+                <canvas id="endor-chart"></canvas>
+              </div>
+              <div class="col-sm-6">
+                <canvas id="endor-history-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ul class="nav nav-tabs" role="tablist" id="season-bar"></ul>
+        <div id="season-data">
+        </div>
+
+      </div>
+
+      <!-- Main jumbotron for a primary marketing message or call to action -->
+      <div class="jumbotron" id="request-box">
+        <ul class="nav nav-pills" role="tablist">
+          <li id="cookie-li" role="presentation" class="active"><a id="cookie-a" style="cursor:pointer">使用Cookie查询</a></li>
+          <li id="passwd-li" role="presentation"><a id="passwd-a" style="cursor:pointer">使用账号密码查询（不推荐）</a></li>
+          <li id="battletag-li" role="presentation"><a id="battletag-a" style="cursor:pointer">使用战网ID查询（非首次）</a></li>
+        </ul>
+        
+        <div class="form-group">
+          <div class="row">
+            <div class="col-md-4 col-md-offset-4 text-center">
+              <h2>查询生涯</h2>
+            </div>
+          </div>
+        </div>
+        <div id="battletag-div" style="display:none">
+          <div class="form-group">
+            <div class="row">
+              <div class="col-md-4 col-md-offset-4">
+                <input type="text" class="form-control" placeholder="战网ID" id="battletag" pattern=".*">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="cookie-div" style="">
+          <div class="form-group">
+            <div class="row">
+              <div class="col-md-4 col-md-offset-4">
+                <input type="text" class="form-control" placeholder="Cookie" id="cookie" pattern="^[0-9a-zA-Z.%]+$" required>
+              </div>
+              <div class="col-md-4 col-md-offset-4 text-center">
+                全自动cookie上传工具<a href="https://pan.baidu.com/s/1-SGzdjMKIO3L-eMlYw09BA">下载</a>(Win-64bit)
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="passwd-div" style="display:none">
+          <div class="form-group">
+            <div class="row">
+              <div class="col-md-4 col-md-offset-4">
+                <input type="text" class="form-control" placeholder="电子邮箱" id="email" pattern=".*">
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="row">
+              <div class="col-md-4 col-md-offset-4">
+                <input type="password" class="form-control" placeholder="密码" id="passwd">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="row">
+            <div class="col-md-2 col-md-offset-5 text-center">
+              <button id="submit-button" class="btn btn-primary">提交</button>
+            </div>
+            <div class="col-md-2 col-md-offset-5 text-center">
+              <a class="btn" data-toggle="modal" data-target="#message-modal">操作提示</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal fade" id="message-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                &times;
+              </button>
+              <h4 class="modal-title">详情</h4>
+            </div>
+            <div class="modal-body">
+              <div id="cookie-modal-div">
+                <h2> 查询失败 </h2>
+                  <dl>
+                    <dd>1. 请确认<a href="http://ow.blizzard.cn/career" target="_blank">官网</a>能够顺利查询个人战绩。</dd>
+                    <dd>2. 请确认您的操作是否正确。</dd>
+                    <dd>3. 确认无误，仍有问题，可向我们报告问题：ez_lzh@126.com。</dd>
+                    <dd>4. <a href="http://bbs.ngacn.cc/read.php?tid=14632515">NGA讨论帖</a></dd>
+                  </dl>
+                <h2> Cookie方式 </h2>
+                  <h3> 全自动cookie上传工具 </h3>
+                  <p> 一种方式是使用我们提供的全自动cookie上传工具。下载解压后，运行OWRank.exe，登陆您的战网账号即可。由于内嵌了一个浏览器，所以体积稍微有点大。 </p>
+                  <h3> 手动上传cookie </h3>
+                  <p> 另一种方式可以通过您手动在<a href="http://ow.blizzard.cn/career" target="_blank">守望先锋战绩查询</a>网页登录，并利用各个浏览器的Cookie功能，查看并复制ow.blizzard.cn名为bnet_user_cred的cookie。我们将使用此cookie获取您的战绩。</p>
+                  <p> Chrome浏览器教程：</p>
+              </div>
+              <div id="passwd-modal-div">
+                <h2> 账号密码方式 </h2>
+<p>输入登录守望先锋的账号密码即可，我们会使用您的账号密码登录官方网站并获取您的战绩。 </p>
+<p><strong>第一次使用账号密码方式登录时往往会失败，甚至导致您无法登录游戏</strong>，因为系统判断我们的IP：39.107.247.83不是您的常用登录IP地址。此时请手动在<a href="http://ow.blizzard.cn/career" target="_blank">守望先锋战绩查询</a>网页登录，并输入邮箱收到的验证码。之后再次在本站提交账号密码即可。</p>
+<p>当然我们不会记录您的账号密码，仅会记录您在官网上的cookie。如果您不放心，请使用Cookie方式。</p>
+              </div>
+              <div id="battletag-modal-div">
+                <h2> 战网ID方式 </h2>
+                  <p>如果您使用过其它两种方式在本站录入过数据，我们会记录您名为bnet_user_cred的cookie。此后您可尝试仅输入战网ID查询战绩。注意输入时要加上#号以及后面的数字，例如“张三#2018”。</p>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">
+                关闭
+              </button>
+            </div>
+          </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+      </div>
+
+      <div class="modal fade" id="hero-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                &times;
+              </button>
+              <h4 class="modal-title" id="hero-modal-title">
+              </h4>
+            </div>
+            <div class="modal-body">
+              <div id="hero-history-chart-div">
+                <canvas id="hero-history-chart">
+              </div>
+              <div id="hero-history-chart-fail">
+                <h3>历史数据加载失败</h3>
+              </div>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="list-group" id="modal-list-group">
+                  </div>
+                </div>
+                <div class="col-md-8" id="modal-tables">
+                  <table class="table table-striped">
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">
+                关闭
+              </button>
+            </div>
+          </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+      </div>
+
+    </div> <!-- /container -->

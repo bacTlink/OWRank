@@ -1,0 +1,38 @@
+body {
+  padding-top: 70px;
+  padding-bottom: 30px;
+}
+
+.theme-dropdown .dropdown-menu {
+  position: static;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.theme-showcase > p > .btn {
+  margin: 5px 0;
+}
+
+.theme-showcase .navbar .container {
+  width: auto;
+}
+
+.label-rank {
+  background-color: #DAA520;
+}
+.label-rank[href]:hover,
+.label-rank[href]:focus {
+  background-color: #DAA520;
+}
+.progress-bar-sportsmanship {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, .25) 0%, rgba(255, 255, 255, .0) 100%);
+  background-color: #2EB131;
+}
+.progress-bar-teammate {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, .25) 0%, rgba(255, 255, 255, .0) 100%);
+  background-color: #BD0BEA;
+}
+.progress-bar-shotcaller {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, .25) 0%, rgba(255, 255, 255, .0) 100%);
+  background-color: #D7810D;
+}
