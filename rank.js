@@ -106,7 +106,7 @@ exports.gotEndor = function(level, sportsmanship, teammate, shotcaller) {
 
 exports.gotRank = function(season, rank, highest_rank) {
   var last;
-  if (cached_rank['rank'+season].length > 0) {
+  if (cached_rank['rank'+season] !== undefined && cached_rank['rank'+season].length > 0) {
     last = cached_rank['rank' + season][cached_rank['rank'+season].length - 1];
   } else {
     last = {
