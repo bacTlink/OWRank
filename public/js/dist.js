@@ -277,7 +277,10 @@ function getDesigns() {
   var title = ["青铜","白银","黄金","铂金","钻石","大师","宗师"];
   var design_bar = "";
   for (var i = 0; i < title.length; ++i) {
-    design_bar += "<li><a style='cursor:pointer' onclick='switchDesign($(this), " + i + ")'>" + title[i] + "</a></li>";
+    design_bar += "<li><a style='cursor:pointer' onclick='switchDesign($(this), " + i + ")'>"
+        + title[i]
+        + '<img style="height:35px" src="http://overwatch.nos.netease.com/images/game/rank-icons/season-2/rank-' + (i + 1) + '.png">'
+        + "</a></li>";
   }
   $('#design-bar').html(design_bar + getChoose(1));
 }

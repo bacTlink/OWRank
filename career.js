@@ -231,6 +231,10 @@ function getCallbackFunction(res, auto_update = false, battletag = null) {
         fs.unlink(file_path, function() {});
         var player_stat = JSON.parse(data);
         var new_battletag = player_stat.player.name;
+        if (!common.notEmpty(new_battletag) && common.notEmpty(battletag)) {
+          new_battletag = battletag;
+          player_stat.player.name = battletag;
+        }
         if (!auto_update) {
           console.log(new_battletag);
         }
