@@ -1,6 +1,6 @@
 # OWRank
 A web server for processing Overwatch player data.
-An instance is [OWRank](https://owrank.top).
+An instance here: [OWRank](https://owrank.top).
 
 # Installation
 Firstly, download this repo:
@@ -15,7 +15,7 @@ $ mkdir cert
 $ cp "YOUR CERTIFICATES" cert/
 ```
 
-Alternatively, you can modify [server.js](://github.com/bacTlink/OWRank/blob/master/server.js) to disable HTTPS.
+Alternatively, you can modify [server.js](https://github.com/bacTlink/OWRank/blob/master/server.js) to disable HTTPS.
 
 The server runs inside Docker container.
 You can get Docker from its [official website](https://docs.docker.com).
@@ -51,7 +51,7 @@ It saves data into a randomly named file, and print its name to standard output.
 [auto_update.js](https://github.com/bacTlink/OWRank/blob/master/auto_update.js) automatically updates user data by periodically sending requests to the local web server.
 
 ## Web Server
-The web server is organized by (pages)[https://github.com/bacTlink/OWRank/blob/master/page.js].
+The web server is organized by [pages](https://github.com/bacTlink/OWRank/blob/master/page.js).
 This design is for making the pages loose coupled, which benefits multi-person development.
 
 A page consists of front end and back end.
