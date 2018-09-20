@@ -11,11 +11,11 @@ $ git clone https://github.com/bacTlink/OWRank.git
 Then enter the repo directory and copy your HTTPS certificates into it
 ```
 $ cd OWRank
-$ mkdir cert
-$ cp "YOUR CERTIFICATES" cert/
+$ mkdir WebServer/cert
+$ cp "YOUR CERTIFICATES" WebServer/cert/
 ```
 
-Alternatively, you can modify [server.js](https://github.com/bacTlink/OWRank/blob/master/server.js) to disable HTTPS.
+Alternatively, you can modify [server.js](https://github.com/bacTlink/OWRank/blob/master/WebServer/server.js) to disable HTTPS.
 
 The server runs inside Docker container.
 You can get Docker from its [official website](https://docs.docker.com).
@@ -44,14 +44,14 @@ The server consists of three parts.
 
 ## Data Collection
 The server use CasperJS to fetch data from official [website](http://ow.blizzard.cn/career).
-The entrance is [bl-20180714.js](https://github.com/bacTlink/OWRank/blob/master/bl-20180714.js), which supports ```cookie``` method and ```passwd``` method.
+The entrance is [bl-20180714.js](https://github.com/bacTlink/OWRank/blob/master/DataCollection/bl-20180714.js), which supports ```cookie``` method and ```passwd``` method.
 It saves data into a randomly named file, and print its name to standard output.
 
 ## Auto Updating
-[auto_update.js](https://github.com/bacTlink/OWRank/blob/master/auto_update.js) automatically updates user data by periodically sending requests to the local web server.
+[auto_update.js](https://github.com/bacTlink/OWRank/blob/master/AutoUpdating/auto_update.js) automatically updates user data by periodically sending requests to the local web server.
 
 ## Web Server
-The web server is organized by [pages](https://github.com/bacTlink/OWRank/blob/master/page.js).
+The web server is organized by [pages](https://github.com/bacTlink/OWRank/blob/master/WebServer/page.js).
 This design is for making the pages loose coupled, which benefits multi-person development.
 
 A page consists of front end and back end.
