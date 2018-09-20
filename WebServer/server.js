@@ -21,16 +21,14 @@ var credentials = {key: privateKey, cert: certificate};
 var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(httpsPort, function() {});
 
-var career = require('./career');
-var rank = require('./rank');
-var distribution = require('./distribution');
-var page = require('./page');
-
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(req, res) {
   res.redirect('https://owrank.top:' + httpsPort + '/index');
 });
+
+var page = require('./page');
+var components = {};
 
 var cache_pages = [];
 function getAppCallback(i) {
@@ -39,30 +37,27 @@ function getAppCallback(i) {
   }
   return callback;
 }
+function addPost(name, backend) {
+  app.post('/' + name, function(req, res) {
+    backend.process(req, res, components);
+  });
+}
 for (var i = 0; i < page.pages.length; ++i) {
   var rec = page.pages[i];
   if (rec.id) {
     cache_pages[i] = page.getHTML(rec.id);
     app.get('/' + rec.id, getAppCallback(i));
   }
+  if (rec.backends) {
+    for (var j = 0; j < rec.backends.length; ++j) {
+      var backend_name = rec.backends[j];
+      var backend = require('./backends/' + backend_name);
+      components[backend_name] = backend;
+      addPost(backend_name, backend);
+    }
+  }
 }
 
 app.get('*', function(req, res) {
   res.status(404).send('Not found');
-});
-
-app.post('/rank', function(req, res) {
-  rank.process_data(req, res);
-});
-
-app.post('/career', function(req, res) {
-  career.process_career(req, res, rank);
-});
-
-app.post('/dist', function(req, res) {
-  distribution.process_distribution(req, res);
-});
-
-app.post('/history_career', function(req, res) {
-  career.process_history_career(req, res);
 });

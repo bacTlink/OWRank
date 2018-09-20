@@ -4,21 +4,24 @@ var pages = [
     title: '个人数据',
     css: ['bootstrap', 'bootstrap-theme', 'ie10-bug', 'owrank-theme'],
     content: 'personal_data.html',
-    scripts: ['jquery', 'bootstrap', 'ie10-bug', 'chartjs', 'js/data.js']
+    scripts: ['jquery', 'bootstrap', 'ie10-bug', 'chartjs', 'js/data.js'],
+    backends: ['career', 'history_career']
   },
   {
     id: 'rank',
     title: '排行榜',
     css: ['bootstrap', 'bootstrap-theme', 'ie10-bug', 'owrank-theme'],
     content: 'rank.html',
-    scripts: ['jquery', 'bootstrap', 'ie10-bug', 'js/rank.js']
+    scripts: ['jquery', 'bootstrap', 'ie10-bug', 'js/rank.js'],
+    backends: ['rank']
   },
   {
     id: 'dist',
     title: '英雄使用数据',
     css: ['bootstrap', 'bootstrap-theme', 'ie10-bug', 'owrank-theme'],
     content: 'dist.html',
-    scripts: ['jquery', 'bootstrap', 'ie10-bug', 'chartjs', 'js/dist.js']
+    scripts: ['jquery', 'bootstrap', 'ie10-bug', 'chartjs', 'js/dist.js'],
+    backends: ['dist']
   },
   {
     title: '更新日志',

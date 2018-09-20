@@ -1,4 +1,4 @@
-var common = require('./common');
+var common = require('../../utils/common');
 var mysql = require('promise-mysql');
 var querystring = require('querystring');
 var pool = mysql.createPool({ host: 'localhost', user: 'root', password: '', database: 'owrank', connectionLimit: 10 });
@@ -120,7 +120,7 @@ exports.gotRank = function(season, rank, highest_rank) {
   }
 }
 
-exports.process_data = function(req, res) {
+exports.process = function(req, res, components) {
   var post = '';
   req.on('data', function(chunk) {
     post += chunk;

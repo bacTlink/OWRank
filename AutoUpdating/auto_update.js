@@ -1,4 +1,4 @@
-var common = require('./common');
+var common = require('../utils/common');
 var querystring = require('querystring');
 var https = require('https');
 var mysql = require('promise-mysql');

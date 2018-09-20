@@ -1,6 +1,6 @@
 var rank_data;
-var common = require('./common');
-var migrate = require('./migrate');
+var common = require('../../utils/common');
+var migrate = require('../../utils/migrate');
 var child_process = require('child_process');
 var querystring = require('querystring');
 var fs = require('fs');
@@ -9,8 +9,8 @@ var pool = mysql.createPool({ host: 'localhost', user: 'root', password: '', dat
 
 function getCareerId(paras, callback) {
   child_process.execFile('/usr/local/bin/node',
-      ['/home/node/casperjs/bin/casperjs.js', '/home/node/bl-20180714.js'].concat(paras),
-      { 'env': {'ENGINE_EXECUTABLE':'/home/node/phantomjs/phantomjs'}, 'timeout': 30000 },
+      ['/home/node/DataCollection/casperjs/bin/casperjs.js', '/home/node/DataCollection/bl-20180714.js'].concat(paras),
+      { 'env': {'ENGINE_EXECUTABLE':'/home/node/DataCollection/phantomjs/phantomjs'}, 'timeout': 30000 },
       callback
   );
 }
@@ -259,8 +259,8 @@ function getCallbackFunction(res, auto_update = false, battletag = null) {
   return callbackFunction;
 }
 
-exports.process_career = function(req, res, o_rank_data) {
-  rank_data = o_rank_data;
+exports.process = function(req, res, components) {
+  rank_data = components["rank"];
   var post = '';
   req.on('data', function(chunk) {
     post += chunk;
@@ -287,50 +287,6 @@ exports.process_career = function(req, res, o_rank_data) {
         getCareerId(['cookie', post.cookie], getCallbackFunction(res));
       } else if (common.notEmpty(post.email) && common.notEmpty(post.passwd)) {
         getCareerId(['passwd', post.email, post.passwd], getCallbackFunction(res));
-      } else {
-        res.status(404).send('Hack.');
-      }
-    } catch (e) {
-      res.status(404).send('Internal Error.');
-    }
-  });
-}
-
-function getHistoryCareer(battletag, season, hero, res) {
-  pool.query("select * from profile where battletag=? and season=? and hero=?", [battletag,season,hero]).then(function (rows) {
-    var his_profile = [];
-    var name_map = {};
-    var cnt = 0;
-    for (var i = 0; i < rows.length; ++i) {
-      var data = JSON.parse(rows[i].json);
-      for (var j = 0; j < data.length; ++j) {
-        var s_data = data[j];
-        var k;
-        if (name_map[s_data.name] != undefined) {
-          k = name_map[s_data.name];
-        } else {
-          k = cnt;
-          name_map[s_data.name] = cnt;
-          his_profile.push({name:s_data.name,format:s_data.format,values:[]});
-          ++cnt;
-        }
-        his_profile[k].values.push({date:rows[i].date,value:s_data.value});
-      }
-    }
-    res.send(JSON.stringify(his_profile));
-  });
-}
-
-exports.process_history_career = function(req, res) {
-  var post = '';
-  req.on('data', function(chunk) {
-    post += chunk;
-  });
-  req.on('end', function() {
-    post = querystring.parse(post);
-    try {
-      if (common.notEmpty(post.battletag) && common.notEmpty(post.season) && common.notEmpty(post.hero)) {
-        getHistoryCareer(post.battletag, post.season, post.hero, res);
       } else {
         res.status(404).send('Hack.');
       }

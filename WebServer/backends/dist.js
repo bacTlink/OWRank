@@ -1,6 +1,6 @@
 var fs = require('fs');
 var querystring = require('querystring');
-var common = require('./common');
+var common = require('../../utils/common');
 var mysql = require('promise-mysql');
 var pool = mysql.createPool({ host: 'localhost', user: 'root', password: '', database: 'owrank', connectionLimit: 10 });
 
@@ -134,11 +134,16 @@ function getNewestDistribution(callback) {
 var cached_distribution;
 
 function save_dist() {
-  fs.writeFile('tmp/dist.json', JSON.stringify(cached_distribution), (err) => {});
+  fs.writeFile('./tmp/dist.json', JSON.stringify(cached_distribution), (err) => {});
 }
 
-fs.readFile('tmp/dist.json', function (err, data) {
-  if (!err) { cached_distribution = JSON.parse(data); }
+fs.readFile('./tmp/dist.json', function (err, data) {
+  if (!err) {
+    console.log("Dist Loaded");
+    cached_distribution = JSON.parse(data);
+  } else {
+    console.log("Dist Loading Failed");
+  }
   getNewestDistribution(function (dis) {
     cached_distribution = dis;
     save_dist();
@@ -163,8 +168,7 @@ function getGamedata(name, callback) {
   });
 }
 
-exports.process_distribution = function (req, res) {
-  //res.send(JSON.stringify(cached_distribution));
+exports.process = function (req, res, components) {
   var post = '';
   req.on('data', function(chunk) {
     post += chunk;
