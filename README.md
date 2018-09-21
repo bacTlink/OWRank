@@ -45,7 +45,7 @@ The server consists of three parts.
 ## Data Collection
 The server use CasperJS to fetch data from official [website](http://ow.blizzard.cn/career).
 The entrance is [bl-20180714.js](https://github.com/bacTlink/OWRank/blob/master/DataCollection/bl-20180714.js), which supports ```cookie``` method and ```passwd``` method.
-It saves data into a randomly named file, and print its name to standard output.
+It saves data into a randomly named file, and prints its name to standard output.
 
 ## Auto Updating
 [auto_update.js](https://github.com/bacTlink/OWRank/blob/master/AutoUpdating/auto_update.js) automatically updates user data by periodically sending requests to the local web server.
@@ -55,8 +55,8 @@ The web server is organized by [pages](https://github.com/bacTlink/OWRank/blob/m
 This design is for making the pages loose coupled, which benefits multi-person development.
 
 A page consists of front end and back end.
-Logically, the front end should focus on displaying data on browser, while the back end should focus on communicate with database and process data.
-The front end should not directly query database, but send requests to back end.
+Logically, the front end should focus on displaying data on browser, while the back end should focus on communicating with database and processing data.
+The front end should not directly query database, but send requests to the back end.
 
 # Copyright and License
 Code and documentation copyright 2018 bacTlink and contributors. Code released under the MIT License. Docs released under Creative Commons.
