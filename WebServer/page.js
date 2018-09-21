@@ -24,6 +24,15 @@ var pages = [
     backends: ['dist']
   },
   {
+    title: '关于',
+    always: true,
+    opt: {href:'#', 'data-toggle':'modal', 'data-target':'#about-modal'},
+    'pull-right': true,
+    css: ['bootstrap', 'bootstrap-theme', 'ie10-bug', 'owrank-theme'],
+    content: 'about.html',
+    scripts: ['jquery', 'bootstrap', 'ie10-bug']
+  },
+  {
     title: '更新日志',
     always: true,
     opt: {href:'#', 'data-toggle':'modal', 'data-target':'#update-modal'},
