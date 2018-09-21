@@ -9,8 +9,8 @@ var pool = mysql.createPool({ host: 'localhost', user: 'root', password: '', dat
 
 function getCareerId(paras, callback) {
   child_process.execFile('/usr/local/bin/node',
-      ['/home/node/DataCollection/casperjs/bin/casperjs.js', '/home/node/DataCollection/bl-20180714.js'].concat(paras),
-      { 'env': {'ENGINE_EXECUTABLE':'/home/node/DataCollection/phantomjs/phantomjs'}, 'timeout': 30000 },
+      [__dirname + '/../../DataCollection/casperjs/bin/casperjs.js', __dirname + '/../../DataCollection/bl-20180714.js'].concat(paras),
+      { 'env': {'ENGINE_EXECUTABLE':__dirname+'/../../DataCollection/phantomjs/phantomjs'}, 'timeout': 30000 },
       callback
   );
 }
@@ -226,7 +226,7 @@ function getCallbackFunction(res, auto_update = false, battletag = null) {
       var career_message = parseCareerOutput(stdout);
       var id = career_message.id;
       var cookie = career_message.cookie;
-      var file_path = '/tmp/owrank-' + id;
+      var file_path = common.tmp_path + '/owrank-' + id;
       fs.readFile(file_path, function(error, data) {
         fs.unlink(file_path, function() {});
         var player_stat = JSON.parse(data);

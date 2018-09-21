@@ -15,8 +15,8 @@ app2.get('*', function(req,res){
 httpServer.listen(httpPort, function(){});
 
 var https = require('https');
-var privateKey = fs.readFileSync("cert/privkey.pem");
-var certificate = fs.readFileSync("cert/fullchain.pem");
+var privateKey = fs.readFileSync(__dirname + "/cert/privkey.pem");
+var certificate = fs.readFileSync(__dirname + "/cert/fullchain.pem");
 var credentials = {key: privateKey, cert: certificate};
 var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(httpsPort, function() {});

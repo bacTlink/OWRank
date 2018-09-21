@@ -19,6 +19,7 @@ function makeid() {
 
 var utils = require('utils');
 var fs = require('fs');
+var common = require('../utils/common');
 var casper = require('casper').create({
   //verbose: true, logLevel: "info",
   pageSettings: {
@@ -108,7 +109,7 @@ casper.then(function() {
 });
 casper.then(function() {
   var id = makeid();
-  fs.write('/tmp/owrank-' + id, JSON.stringify(player_stat), "w");
+  fs.write(common.tmp_path + '/owrank-' + id, JSON.stringify(player_stat), "w");
   res['id'] = id;
 });
 //casper.then(function() { utils.dump(player_stat); });

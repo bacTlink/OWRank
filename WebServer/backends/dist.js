@@ -32,7 +32,9 @@ function getNewestDistribution(callback) {
   }).then(function (res) {
     var cnt = res[0]["cnt"];
     var i = 0;
-    var tmp_con = connection.query("select o.* from `player_rank` o left join `profile` b on o.battletag=b.battletag and o.season=b.season and o.date<b.date where b.date is null limit 0,1000");
+    var tmp_con;
+    if (cnt > 0) tmp_con = connection.query("select o.* from `player_rank` o left join `profile` b on o.battletag=b.battletag and o.season=b.season and o.date<b.date where b.date is null limit 0,1000");
+    else tmp_con = connection.query("select count(*) as cnt from `profile` where not hero=?", ["所有英雄"]);
     for (var j = 0; j < cnt; j += 1000) {
       tmp_con = tmp_con.then(function (rows) {
         for (var c = 0; c < rows.length; ++c) {
@@ -131,13 +133,18 @@ function getNewestDistribution(callback) {
   });
 }
 
-var cached_distribution;
+var cached_distribution = {
+  fast_time: [],
+  rank_time: [],
+  total_fast_time: [],
+  total_rank_time: []
+};
 
 function save_dist() {
-  fs.writeFile('./tmp/dist.json', JSON.stringify(cached_distribution), (err) => {});
+  fs.writeFile(common.tmp_path + '/dist.json', JSON.stringify(cached_distribution), (err) => {});
 }
 
-fs.readFile('./tmp/dist.json', function (err, data) {
+fs.readFile(common.tmp_path + '/dist.json', function (err, data) {
   if (!err) {
     console.log("Dist Loaded");
     cached_distribution = JSON.parse(data);

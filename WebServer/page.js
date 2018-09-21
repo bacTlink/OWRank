@@ -71,7 +71,7 @@ var common_scripts = {
 
 var fs = require('fs');
 for (var i = 0; i < pages.length; ++i) {
-  pages[i].HTMLcontent = fs.readFileSync('public/' + pages[i].content);
+  pages[i].HTMLcontent = fs.readFileSync(__dirname + '/public/' + pages[i].content);
 }
 
 String.prototype.replaceAll = function(search, replacement) {
