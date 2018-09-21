@@ -6,42 +6,44 @@ var pool = mysql.createPool({ host: 'localhost', user: 'root', password: '', dat
 
 function updateBattleTag(battletag, callback) {
   console.log('Update: ' + battletag);
-  var post_data = 'battletag=' + battletag + "&auto_update=true";
-  var post_options = {
-    host: 'owrank.top',
-    port: '443',
-    path: '/career',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Content-Length': Buffer.byteLength(post_data)
-    }
-  };
-  var post_req = https.request(post_options, function(res) {
-    res.setEncoding('utf8');
-    var res_st = "";
-    res.on('data', function (chunk) {
-      res_st += chunk;
-    });
-    res.on('end', function () {
-      try {
-        var res_obj = JSON.parse(res_st);
-        setTimeout(function() {
-          if (res_obj.date !== common.getSqlDate(new Date())) {
-            callback(false, callback);
-          } else {
-            callback(true, callback);
-          }
-        }, 30000);
-      } catch (e) {
-        setTimeout(function() {
-          callback(false, callback);
-        }, 30000);
+  try {
+    var post_data = 'battletag=' + battletag + "&auto_update=true";
+    var post_options = {
+      host: 'owrank.top',
+      port: '443',
+      path: '/career',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(post_data)
       }
+    };
+    var post_req = https.request(post_options, function(res) {
+      res.setEncoding('utf8');
+      var res_st = "";
+      res.on('data', function (chunk) {
+        res_st += chunk;
+      });
+      res.on('end', function () {
+        try {
+          var res_obj = JSON.parse(res_st);
+          setTimeout(function() {
+            if (res_obj.date !== common.getSqlDate(new Date())) {
+              callback(false, callback);
+            } else {
+              callback(true, callback);
+            }
+          }, 30000);
+        } catch (e) {
+          setTimeout(function() {
+            callback(false, callback);
+          }, 30000);
+        }
+      });
     });
-  });
-  post_req.write(post_data);
-  post_req.end();
+    post_req.write(post_data);
+    post_req.end();
+  } catch (e) { }
 }
 
 function updateAll(conn) {
