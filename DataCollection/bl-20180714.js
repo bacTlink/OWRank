@@ -19,7 +19,9 @@ function makeid() {
 
 var utils = require('utils');
 var fs = require('fs');
-var common = require('../utils/common');
+var common = {
+  tmp_path: '/tmp/'
+};
 var casper = require('casper').create({
   //verbose: true, logLevel: "info",
   pageSettings: {
