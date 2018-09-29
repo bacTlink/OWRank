@@ -53,6 +53,8 @@ $('#message-modal').on('shown.bs.modal', function(event) {
 });
 var owrank_data = {
   cur_season: -1,
+  cur_titlenum: 0,
+  cur_sortkey: "",
   data: null,
   doughnut_config: {
     type: 'doughnut',
@@ -112,7 +114,7 @@ var owrank_data = {
     this.level_history_chart.update();
     this.endor_level_history_chart.update();
   },
-  loadData: function(season_index) {
+  setSeason: function(season_index) {
     var season_bar = $("#season-bar-" + this.cur_season);
     var season_data = $("#season-data-" + this.cur_season);
     season_bar.removeClass("active");
@@ -122,6 +124,19 @@ var owrank_data = {
     season_data = $("#season-data-" + this.cur_season);
     season_bar.addClass("active");
     season_data.toggle();
+    this.sortSeasonDetailData();
+  },
+  setTitlenum: function(titlenum) {
+    var titlenum_bar = $("#titlenum-bar-" + this.cur_titlenum);
+    titlenum_bar.removeClass("active");
+    this.cur_titlenum = titlenum;
+    var titlenum_bar = $("#titlenum-bar-" + this.cur_titlenum);
+    titlenum_bar.addClass("active");
+    this.sortSeasonDetailData();
+  },
+  setSortkey: function(sortkey) {
+    this.cur_sortkey = sortkey;
+    this.sortSeasonDetailData();
   },
   formatValue: function(a) {
     switch (a.format) {
@@ -166,16 +181,14 @@ var owrank_data = {
     }
     return "--"
   },
-  getSeasonDetailData: function(season_index, sortkey) {
+  getShortTitle: function (title) {
+    return title.replace('每10分钟', '');
+  },
+  getCombineTitle(season_index, title) {
     season_data = this.data.seasons[season_index];
-    var title = ["游戏时间", "获胜占比", "平均每10分钟消灭", "平均每10分钟对英雄伤害量", "平均每10分钟治疗量", "平均每10分钟阵亡", "武器命中率", "暴击命中率"];
-    var res = "";
-    res += "<table class=\"table table-striped table-responsive text-nowrap\">";
-    res += "<thead><tr>";
-    res += "<th>英雄</th>";
     var tmptitle = [];
     for (var x = 0; x < title.length; ++x) {
-      var ok = false;
+      var cnt = 0;
       for (var i = 0; i < season_data.length; ++i) {
         if (season_data[i].data.length == 0) {
           continue;
@@ -188,15 +201,25 @@ var owrank_data = {
           }
         }
         if (flag == true) {
-          ok = true;
-          break;
+          ++cnt;
         }
       }
-      if (ok) tmptitle.push(title[x]);
+      if (cnt >= 2) tmptitle.push(title[x]);
     }
-    title = tmptitle;
+    if (tmptitle[0] != "游戏时间") {
+      tmptitle.unshift("游戏时间");
+    }
+    return tmptitle;
+  },
+  getSeasonDetailData: function(season_index, sortkey, title) {
+    season_data = this.data.seasons[season_index];
+    var res = "";
+    res += "<table class=\"table table-striped table-responsive text-nowrap\">";
+    res += "<thead><tr>";
+    res += "<th>英雄</th>";
+    title = this.getCombineTitle(season_index, title);
     for (var i = 0; i < title.length; ++i) {
-      res += "<th><a style=\"cursor:pointer\" onclick=\"owrank_data.sortSeasonDetailData(" + season_index + ",\'" + title[i] + "\')\">" + title[i] + "</a></th>";
+      res += "<th><a style=\"cursor:pointer\" onclick=\"owrank_data.setSortkey(\'" + title[i] + "\')\">" + this.getShortTitle(title[i]) + "</a></th>";
     }
     res += "</thead></tr>";
     res += "<tbody>";
@@ -236,7 +259,6 @@ var owrank_data = {
         }
         pros += pro;
       }
-      pros += "</tr>";
       if (season_data[i].name == "所有英雄") {
         res += pros;
       } else {
@@ -260,9 +282,8 @@ var owrank_data = {
     if (!$("#season" + season_index + "-rank-chart").get(0)) {
       return;
     }
-    $("#season" + season_index + "-rank-chart-title").on("click", function() {
-      $("#season" + season_index + "-rank-chart").toggle();
-    });
+    var chart_title = $("#season" + season_index + "-rank-chart-title");
+    chart_title.on("click", function() { $("#season" + season_index + "-rank-chart").toggle(); });
     var ctx = $("#season" + season_index + "-rank-chart").get(0).getContext('2d');
     var config = {
       type: 'bar',
@@ -279,7 +300,7 @@ var owrank_data = {
           type: 'line',
           backgroundColor: Chart.helpers.color("rgb(54, 162, 235)").alpha(0.5).rgbString(),
           borderColor: "rgb(54, 162, 235)",
-          label: '生涯最高',
+          label: '赛季最高',
           fill: false,
           data: []
         }],
@@ -329,10 +350,13 @@ var owrank_data = {
     var rank_chart = new Chart(ctx, config);
     this.season_rank_charts[season_index] = rank_chart;
   },
-  sortSeasonDetailData: function(season_index, sortkey) {
+  sortSeasonDetailData: function() {
+    var season_index = this.cur_season;
+    var sortkey = this.cur_sortkey;
     var data_div = $("#season-data-table-" + season_index);
     var left = data_div.scrollLeft();
-    data_div.html(this.getSeasonDetailData(season_index, sortkey));
+    var title = this.category[this.cur_titlenum];
+    data_div.html(this.getSeasonDetailData(season_index, sortkey, title));
     data_div.scrollLeft(left);
   },
   showSeasonDetailData: function(season_index, sortkey) {
@@ -341,38 +365,50 @@ var owrank_data = {
     if (this.data.player.rank[season_index] && this.data.player.rank[season_index].rank) {
       res += '<h3 id="season' + season_index + '-rank-chart-title">';
       res += '<span class="label label-rank" style="cursor:pointer">竞技分数 ' + this.data.player.rank[season_index].rank + '</span> ';
-      res += '<span class="label label-rank" style="cursor:pointer">最高分数 ' + this.data.player.rank[season_index].highest_rank + '</span> ';
+      res += '<span class="label label-rank" style="cursor:pointer">赛季最高 ' + this.data.player.rank[season_index].highest_rank + '</span> ';
       res += '</h3>';
       res += '<canvas id="season' + season_index + '-rank-chart" style="display:none"></canvas>';
     }
     res += "<div id=\"season-data-table-" + season_index + "\">";
-    res += this.getSeasonDetailData(season_index, sortkey);
+    res += this.getSeasonDetailData(season_index, sortkey, this.category[this.cur_titlenum]);
     res += "</div>";
     res += "</div>";
     $("#season-data").html($("#season-data").html()+res);
-    this.getSeasonRankChart(season_index);
   },
   showSeasonData: function() {
     this.season_rank_charts = [];
     var bar = $("#season-bar");
     bar.html("");
     this.cur_season = -1;
+    this.cur_titlenum = 0;
+    this.cur_sortkey = "游戏时间";
     $("#season-data").html("");
     for (var i = 0; i < this.data.seasons.length; ++i) {
       if (this.data.seasons[i] == null) {
         continue;
       }
       var season_title = i == 0 ? "快速游戏" : "第" + i + "赛季";
-      bar.html(bar.html()+"<li class=\"\" role=\"presentation\" id=\"season-bar-" + i + "\" onclick=\"owrank_data.loadData(" + i + ");\"><a style=\"cursor:pointer\">" + season_title + "</a></li>");
+      bar.html(bar.html()+"<li class=\"\" role=\"presentation\" id=\"season-bar-" + i + "\" onclick=\"owrank_data.setSeason(" + i + ");\"><a style=\"cursor:pointer\">" + season_title + "</a></li>");
       this.showSeasonDetailData(i,"游戏时间");
     }
-    try {
-      this.cur_season = 0;
-      var season_bar = $("#season-bar-0");
-      season_bar.addClass("active");
-      var season_data = $("#season-data-0");
-      season_data.show();
-    } catch(e) {}
+    {
+      var bar = $('#title-bar');
+      bar.html("");
+      for (var i = 0; i < owrank_data.category_title.length - 1; ++i) {
+        bar.html(bar.html()+"<li class=\"" + (i == 0 ? "active" : "") + "\" role=\"presentation\" id=\"titlenum-bar-"+i+"\" onclick=\"owrank_data.setTitlenum("+i+");\"><a style=\"cursor:pointer\">" + owrank_data.category_title[i] + "</a></li>");
+      }
+    }
+    for (var i = 0; i < this.data.seasons.length; ++i) {
+      if (this.data.seasons[i] == null) {
+        continue;
+      }
+      this.getSeasonRankChart(i);
+    }
+    this.cur_season = 0;
+    var season_bar = $("#season-bar-0");
+    season_bar.addClass("active");
+    var season_data = $("#season-data-0");
+    season_data.show();
   },
   cur_category: -1,
   showModalBody: function(hero_data) {
@@ -746,14 +782,14 @@ var owrank_data = {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
-        try {
+        //try {
           var res = JSON.parse(this.responseText);
           owrank_data.showData(res);
           clearInterval(load_progress);
-        } catch (e) {
-          owrank_data.showFailed();
-          clearInterval(load_progress);
-        }
+        //} catch (e) {
+          //owrank_data.showFailed();
+          //clearInterval(load_progress);
+        //}
       } else if (this.readyState == 4) {
         owrank_data.showFailed();
         clearInterval(load_progress);
@@ -782,6 +818,7 @@ var owrank_data = {
     $("#failed").hide();
   }, 
   category_title: [
+    "常用",
     "游戏数据",
     "平均数据",
     "消灭",
@@ -796,6 +833,19 @@ var owrank_data = {
   category: [
     [
       "游戏时间",
+      "获胜占比",
+      "平均每10分钟火力全开时间",
+      "平均每10分钟消灭",
+      "单次存活时消灭",
+      "平均每10分钟最后一击",
+      "平均每10分钟对英雄伤害量",
+      "平均每10分钟对屏障伤害量",
+      "平均每10分钟治疗量",
+      "平均每10分钟攻击助攻",
+      "平均每10分钟防御助攻"
+    ],
+    [
+      "游戏时间",
       "比赛场次",
       "比赛胜利",
       "比赛战败",
@@ -807,6 +857,7 @@ var owrank_data = {
       "青铜奖章"
     ],
     [
+      "平均每10分钟火力全开时间",
       "单次存活时消灭",
       "单次存活时伤害总量",
       "平均每10分钟消灭",
@@ -820,13 +871,14 @@ var owrank_data = {
       "平均每10分钟攻击助攻",
       "平均每10分钟防御助攻",
       "平均每10分钟阵亡",
-      "平均每10分钟火力全开时间",
       "平均每10分钟暴击",
       "平均每10分钟目标攻防消灭",
       "平均每10分钟目标攻防时间",
+      "平均每10分钟单独消灭",
       "平均每10分钟最后一击",
       "平均每10分钟阻挡伤害量",
       "平均每10分钟近身消灭",
+      "平均每10分钟近身最后一击",
       "平均每10分钟辅助攻击直接命中",
       "平均能量",
       "鼓舞士气持续时间占比",
@@ -847,7 +899,6 @@ var owrank_data = {
       "平均每10分钟击退玩家",
       "平均每10分钟制造护甲包",
       "平均每10分钟剧毒诡雷消灭",
-      "平均每10分钟单独消灭",
       "平均每10分钟原始暴怒消灭",
       "平均每10分钟反弹伤害量",
       "平均每10分钟呼叫机甲",
@@ -884,7 +935,6 @@ var owrank_data = {
       "平均每10分钟螺旋飞弹消灭",
       "平均每10分钟裂地猛击消灭",
       "平均每10分钟超充能器助攻",
-      "平均每10分钟近身最后一击",
       "平均每10分钟连射消灭",
       "平均每10分钟重力喷涌消灭",
       "平均每10分钟钩中敌人",
@@ -898,11 +948,21 @@ var owrank_data = {
       "平均每10分钟目标攻防消灭",
       "平均每10分钟单独消灭",
       "平均每10分钟最后一击",
-      "平均每10分钟近身消灭",
       "单场最多消灭",
       "单次存活时最多消灭",
       "最佳瞬间消灭",
       "最佳连续消灭",
+      "单场最多目标攻防消灭",
+      "单场最多最后一击",
+      "单场最多近身最后一击",
+      "单场最多近身消灭",
+      "消灭",
+      "瞬间消灭",
+      "单独消灭",
+      "目标攻防消灭",
+      "地形消灭",
+      "最后一击",
+      "近身最后一击",
       "平均每10分钟震荡地雷消灭",
       "平均每10分钟高能消灭",
       "平均每10分钟鸡飞狗跳消灭",
@@ -925,6 +985,7 @@ var owrank_data = {
       "平均每10分钟战术目镜消灭",
       "平均每10分钟托比昂消灭",
       "平均每10分钟坦克模式消灭",
+      "平均每10分钟近身消灭",
       "平均每10分钟喷射背包消灭",
       "平均每10分钟哨戒炮消灭",
       "平均每10分钟哨卫模式消灭",
@@ -936,8 +997,6 @@ var owrank_data = {
       "平均每10分钟“岚”消灭",
       "平均每10分钟“散”消灭",
       "平均每10分钟“斩”消灭",
-      "单场最多目标攻防消灭",
-      "单场最多最后一击",
       "单场最多冲击枪消灭",
       "单场最多冲锋消灭",
       "单场最多剧毒诡雷消灭",
@@ -961,22 +1020,13 @@ var owrank_data = {
       "单场最多自毁消灭",
       "单场最多螺旋飞弹消灭",
       "单场最多裂地猛击消灭",
-      "单场最多近身最后一击",
-      "单场最多近身消灭",
       "单场最多连射消灭",
       "单场最多重力喷涌消灭",
       "单场最多震荡地雷消灭",
       "单场最多高能消灭",
       "单场最多鸡飞狗跳消灭",
-      "消灭",
-      "瞬间消灭",
-      "单独消灭",
-      "目标攻防消灭",
-      "地形消灭",
       "武器消灭",
-      "最后一击",
       "近身消灭",
-      "近身最后一击",
       "冲击枪消灭",
       "冲锋消灭",
       "“散”消灭",
@@ -1017,18 +1067,18 @@ var owrank_data = {
       "鸡飞狗跳消灭"
     ],
     [
-      "主要攻击模式命中率",
-      "特斯拉炮命中率",
-      "火箭重锤近身攻击命中率",
-      "辅助攻击命中率",
-      "近身攻击命中率",
-      "链钩命中率",
       "武器命中率",
-      "原始暴怒近身攻击命中率",
       "暴击命中率",
       "开镜命中率",
       "开镜暴击率",
       "不开镜命中率",
+      "辅助攻击命中率",
+      "近身攻击命中率",
+      "主要攻击模式命中率",
+      "特斯拉炮命中率",
+      "火箭重锤近身攻击命中率",
+      "链钩命中率",
+      "原始暴怒近身攻击命中率",
       "单场最佳不开镜命中率",
       "单场最佳开镜命中率",
       "单场最多暴击",
