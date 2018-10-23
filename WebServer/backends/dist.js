@@ -10,13 +10,6 @@ function createSubset(obj, key, add = {}) {
 }
 
 function getNewestDistribution(start_date, end_date) {
-  var pool = mysql.createPool({
-    connectionLimit : 10,
-    host            : 'localhost',
-    user            : 'root',
-    password        : '',
-    database        : 'owrank'
-  });
   var connection = mysql.createConnection({
     host            : 'localhost',
     user            : 'root',
@@ -46,8 +39,7 @@ function getNewestDistribution(start_date, end_date) {
     if (winrate != -1) {
       wintime = winrate * gametime;
     }
-    pool.query('select * from player_rank where battletag=? and season=? and date<=? order by date desc limit 1', [rec.battletag, rec.season, rec.date], function (error, recs, fields) {
-      if (error) throw error;
+    pool.query('select * from player_rank where battletag=? and season=? and date<=? order by date desc limit 1', [rec.battletag, rec.season, rec.date]).then(function (recs) {
       rec.rank = 0;
       if (recs[0]) {
         rec.rank = common.getRank(recs[0].rank);
@@ -55,8 +47,7 @@ function getNewestDistribution(start_date, end_date) {
         connection.resume();
         return;
       }
-      pool.query('select * from profile where battletag=? and season=? and hero=? and date<? order by date desc limit 1', [rec.battletag, rec.season, rec.hero, rec.date], function (error, recs, fields) {
-        if (error) throw error;
+      pool.query('select * from profile where battletag=? and season=? and hero=? and date<? order by date desc limit 1', [rec.battletag, rec.season, rec.hero, rec.date]).then(function (recs) {
         var pre_gametime = 0;
         var pre_wintime = 0;
         if (recs[0]) {
@@ -115,6 +106,7 @@ function getNewestDistribution(start_date, end_date) {
         }
       }
     }
+    connection.end();
   });
 }
 
