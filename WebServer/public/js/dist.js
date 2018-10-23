@@ -92,9 +92,13 @@ function showChart() {
     var pre_total_time = 0;
     var pre_wintime = 0;
     var dates = Object.keys(records);
-    dates.sort();
+    sortByDateAsc = function (lh, rh)  { var lhs = new Date(lh); var rhs = new Date(rh); return lhs > rhs ? 1 : lhs < rhs ? -1 : 0; };
+    dates.sort(sortByDateAsc);
     for (var i in dates) {
       var date = dates[i];
+      if (!totals[date] || !records[date]) {
+        continue;
+      }
       var total_time = totals[date];
       var game_time = records[date]["gametime"];
       var win_time = 0;

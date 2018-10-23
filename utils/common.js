@@ -51,3 +51,12 @@ exports.notEmpty = function (st) {
   return st && st != "";
 };
 
+exports.getRank = function (rank) {
+  if (rank < 1500) return 0;
+  if (rank < 2000) return 1;
+  if (rank < 2500) return 2;
+  if (rank < 3000) return 3;
+  if (rank < 3500) return 4;
+  if (rank < 4000) return 5;
+  return 6;
+}

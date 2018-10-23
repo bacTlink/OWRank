@@ -1,169 +1,136 @@
-var fs = require('fs');
 var querystring = require('querystring');
 var common = require('../../utils/common');
-var mysql = require('promise-mysql');
-var pool = mysql.createPool({ host: 'localhost', user: 'root', password: '', database: 'owrank', connectionLimit: 10 });
+var mysql = require('mysql');
+var pmysql = require('promise-mysql');
+
+var pool = pmysql.createPool({ host: 'localhost', user: 'root', password: '', database: 'owrank', connectionLimit: 10 });
 
 function createSubset(obj, key, add = {}) {
   obj[key] = obj[key] ? obj[key] : add;
 }
 
-function getDesignation(rank) {
-  if (rank < 1500) return 0;
-  if (rank < 2000) return 1;
-  if (rank < 2500) return 2;
-  if (rank < 3000) return 3;
-  if (rank < 3500) return 4;
-  if (rank < 4000) return 5;
-  return 6;
-}
-
-function getNewestDistribution(callback) {
-  var fast_time = {};
-  var rank_time = [];
-  var total_fast_time = {};
-  var total_rank_time = [];
-  var connection;
-  var pre = [];
-  var rank = [];
-  pool.getConnection().then(function(conn) {
-    connection = conn;
-    return connection.query("select count(*) as cnt from `player_rank` o left join `profile` b on o.battletag=b.battletag and o.season=b.season and o.date<b.date where b.date is null");
-  }).then(function (res) {
-    var cnt = res[0]["cnt"];
-    var i = 0;
-    var tmp_con;
-    if (cnt > 0) tmp_con = connection.query("select o.* from `player_rank` o left join `profile` b on o.battletag=b.battletag and o.season=b.season and o.date<b.date where b.date is null limit 0,1000");
-    else tmp_con = connection.query("select count(*) as cnt from `profile` where not hero=?", ["所有英雄"]);
-    for (var j = 0; j < cnt; j += 1000) {
-      tmp_con = tmp_con.then(function (rows) {
-        for (var c = 0; c < rows.length; ++c) {
-          var rec = rows[c];
-          createSubset(rank, rec.season);
-          rank[rec.season][rec.battletag] = getDesignation(rec.rank);
-        }
-        i += 1000;
-        if (i < cnt) {
-          return connection.query("select o.* from `player_rank` o left join `profile` b on o.battletag=b.battletag and o.season=b.season and o.date<b.date where b.date is null limit "+i+",1000");
-        } else {
-          return connection.query("select count(*) as cnt from `profile` where not hero=?", ["所有英雄"]);
-        }
-      });
+function getNewestDistribution(start_date, end_date) {
+  var pool = mysql.createPool({
+    connectionLimit : 10,
+    host            : 'localhost',
+    user            : 'root',
+    password        : '',
+    database        : 'owrank'
+  });
+  var connection = mysql.createConnection({
+    host            : 'localhost',
+    user            : 'root',
+    password        : '',
+    database        : 'owrank'
+  });
+  acctime = [];
+  connection.query('select * from profile where date>=? and date<=? order by date', [common.getSqlDate(start_date), common.getSqlDate(end_date)]).on('result', function (rec) {
+    connection.pause();
+    if (rec.hero == "全部英雄") {
+      connection.resume();
+      return;
     }
-    return tmp_con;
-  }).then(function (res_cnt) {
-    var cnt = res_cnt[0]["cnt"];
-    var i = 0;
-    var tmp_con = connection.query("select * from `profile` where not hero=? order by date limit 0,1000", ["所有英雄"]);
-    for (var j = 0; j < cnt; j += 1000) {
-      tmp_con = tmp_con.then(function (rows) {
-        for (var c = 0; c < rows.length; ++c) {
-          var rec = rows[c];
-          rec.date = common.getSqlDate(rec.date);
-
-          var data = JSON.parse(rec.json);
-          var gametime = 0;
+    rec.date = common.getSqlDate(rec.date);
+    var data = JSON.parse(rec.json);
+    var gametime = 0;
+    var winrate = -1;
+    var wintime = 0;
+    for (var x = 0; x < data.length; ++x) {
+      if (data[x].name == "游戏时间") {
+        gametime = data[x].value;
+      }
+      if (data[x].name == "获胜占比") {
+        winrate = data[x].value;
+      }
+    }
+    if (winrate != -1) {
+      wintime = winrate * gametime;
+    }
+    pool.query('select * from player_rank where battletag=? and season=? and date<=? order by date desc limit 1', [rec.battletag, rec.season, rec.date], function (error, recs, fields) {
+      if (error) throw error;
+      rec.rank = 0;
+      if (recs[0]) {
+        rec.rank = common.getRank(recs[0].rank);
+      } else if (rec.season != 0) {
+        connection.resume();
+        return;
+      }
+      pool.query('select * from profile where battletag=? and season=? and hero=? and date<? order by date desc limit 1', [rec.battletag, rec.season, rec.hero, rec.date], function (error, recs, fields) {
+        if (error) throw error;
+        var pre_gametime = 0;
+        var pre_wintime = 0;
+        if (recs[0]) {
+          var data = JSON.parse(recs[0].json);
           var winrate = -1;
-          var wintime = 0;
           for (var x = 0; x < data.length; ++x) {
             if (data[x].name == "游戏时间") {
-              gametime = data[x].value;
-            }
-            if (data[x].name == "获胜占比") {
+              pre_gametime = data[x].value;
+            } else if (data[x].name == "获胜占比") {
               winrate = data[x].value;
             }
           }
           if (winrate != -1) {
-            wintime = winrate * gametime;
+            pre_wintime = winrate * pre_gametime;
           }
-
-          createSubset(pre, rec.season);
-          createSubset(pre[rec.season], rec.battletag);
-          createSubset(pre[rec.season][rec.battletag], rec.hero);
-          createSubset(pre[rec.season][rec.battletag][rec.hero], "gametime", 0);
-          createSubset(pre[rec.season][rec.battletag][rec.hero], "wintime", 0);
-          var pre_gametime = pre[rec.season][rec.battletag][rec.hero]["gametime"];
-          var pre_wintime = pre[rec.season][rec.battletag][rec.hero]["wintime"];
-
-          if (rec.season == 0) {
-            createSubset(fast_time, rec.hero);
-            createSubset(fast_time[rec.hero], rec.date);
-            createSubset(fast_time[rec.hero][rec.date], "gametime", 0);
-            fast_time[rec.hero][rec.date]["gametime"] += gametime - pre_gametime;
-
-            createSubset(total_fast_time, rec.date, 0);
-            total_fast_time[rec.date] += gametime - pre_gametime;
-          }
-
-          if (rank[rec.season] && rank[rec.season][rec.battletag] !== undefined) {
-            var r = rank[rec.season][rec.battletag];
-            createSubset(rank_time, rec.season, []);
-            createSubset(rank_time[rec.season], r);
-            createSubset(rank_time[rec.season][r], rec.hero);
-            createSubset(rank_time[rec.season][r][rec.hero], rec.date);
-            createSubset(rank_time[rec.season][r][rec.hero][rec.date], "gametime", 0);
-            createSubset(rank_time[rec.season][r][rec.hero][rec.date], "wintime", 0);
-            var rec_rank_data = rank_time[rec.season][r][rec.hero][rec.date];
-            rec_rank_data["gametime"] += gametime - pre_gametime;
-            rec_rank_data["wintime"] += wintime - pre_wintime;
-
-            createSubset(total_rank_time, rec.season, []);
-            createSubset(total_rank_time[rec.season], r);
-            createSubset(total_rank_time[rec.season][r], rec.date, 0);
-            total_rank_time[rec.season][r][rec.date] += gametime - pre_gametime;
-          }
-
-          pre[rec.season][rec.battletag][rec.hero]["gametime"] = gametime;
-          pre[rec.season][rec.battletag][rec.hero]["wintime"] = wintime;
+        } else if (rec.season == 0) {
+          connection.resume();
+          return;
         }
-        i += 1000;
-        if (i < cnt) {
-          return connection.query("select * from `profile` where not hero=? order by date limit " +i+ ",1000", ["所有英雄"]);
-        } else {
-          connection.release();
-          callback({
-            fast_time: fast_time,
-            rank_time: rank_time,
-            total_fast_time: total_fast_time,
-            total_rank_time: total_rank_time
-          });
-        }
+
+        createSubset(acctime, rec.season, []);
+        createSubset(acctime[rec.season], rec.rank);
+        createSubset(acctime[rec.season][rec.rank], rec.date);
+        createSubset(acctime[rec.season][rec.rank][rec.date], rec.hero);
+        createSubset(acctime[rec.season][rec.rank][rec.date][rec.hero], "gametime", 0);
+        createSubset(acctime[rec.season][rec.rank][rec.date][rec.hero], "wintime", 0);
+
+        acctime[rec.season][rec.rank][rec.date][rec.hero]["gametime"] += gametime - pre_gametime;
+        acctime[rec.season][rec.rank][rec.date][rec.hero]["wintime"] += wintime - pre_wintime;
+
+        connection.resume();
       });
+    });
+  }).on('end', function () {
+    //console.log("end");
+    for (var season = 0; season < acctime.length; ++season)
+    if (acctime[season] != null) {
+      for (var rank = 0; rank < acctime[season].length; ++rank)
+      if (acctime[season][rank] != null) {
+        for (var date in acctime[season][rank])
+        if (acctime[season][rank].hasOwnProperty(date)) {
+          var total_gametime = 0, total_wintime = 0;
+          for (var hero in acctime[season][rank][date])
+          if (acctime[season][rank][date].hasOwnProperty(hero)) {
+            var rec = acctime[season][rank][date][hero];
+            if (rec["gametime"] > 0 || rec["wintime"] > 0) {
+              total_gametime += rec["gametime"];
+              total_wintime += rec["wintime"];
+              pool.query("insert into gametime (season, rank, hero, date, gametime, wintime) values (?, ?, ?, ?, ?, ?) on duplicate key update gametime=?, wintime=?", [season, rank, hero, date, rec["gametime"], rec["wintime"], rec["gametime"], rec["wintime"]]);
+            }
+          }
+          //console.log(season, rank, date, "全部英雄", total_gametime, total_wintime);
+          if (total_gametime > 0 || total_wintime > 0) {
+            pool.query("insert into gametime (season, rank, hero, date, gametime, wintime) values (?, ?, ?, ?, ?, ?) on duplicate key update gametime=?, wintime=?", [season, rank, "全部英雄", date, total_gametime, total_wintime, total_gametime, total_wintime]);
+          }
+        }
+      }
     }
   });
 }
 
-var cached_distribution = {
-  fast_time: [],
-  rank_time: [],
-  total_fast_time: [],
-  total_rank_time: []
-};
+//getNewestDistribution(new Date("2018-10-01"), new Date("2018-11-01"));
 
-function save_dist() {
-  fs.writeFile(common.tmp_path + '/dist.json', JSON.stringify(cached_distribution), (err) => {});
+function update3day() {
+  var b = new Date();
+  var a = new Date();
+  a.setTime(b.getTime() - 3 * 24 * 60 * 60 * 1000);
+  getNewestDistribution(a, b);
 }
 
-fs.readFile(common.tmp_path + '/dist.json', function (err, data) {
-  if (!err) {
-    console.log("Dist Loaded");
-    cached_distribution = JSON.parse(data);
-  } else {
-    console.log("Dist Loading Failed");
-  }
-  getNewestDistribution(function (dis) {
-    cached_distribution = dis;
-    save_dist();
-    console.log("Dist init done.");
-    setInterval(function () {
-      getNewestDistribution(function (dis) {
-        cached_distribution = dis;
-        save_dist();
-        console.log('Dist updated');
-      });
-    }, 60 * 60 * 1000);
-  });
-});
+update3day();
+setInterval(function () {
+  update3day();
+}, 60 * 60 * 1000);
 
 function getGamedata(name, callback) {
   pool.query("select * from gamedata where name=?", name).then(function (rows) {
@@ -183,13 +150,13 @@ exports.process = function (req, res, components) {
   req.on('end', function() {
     post = querystring.parse(post);
     if (post.req == "seasons") {
-      var seasons = [0];
-      for (var i = 0; i < cached_distribution.total_rank_time.length; ++i) {
-        if (cached_distribution.total_rank_time[i] != null) {
-          seasons.push(i);
+      pool.query("select * from gametime group by season").then(function (rows) {
+        var seasons = []
+        for (var i = 0; i < rows.length; ++i) {
+          seasons.push(rows[i].season);
         }
-      }
-      res.send(JSON.stringify(seasons));
+        res.send(JSON.stringify(seasons));
+      });
     } else if (post.req == "gamedata") {
       getGamedata(post.name, function (value) {
         res.send(value);
@@ -197,47 +164,77 @@ exports.process = function (req, res, components) {
     } else if (post.req == "detail_time") {
       var season = post.season;
       var rh = JSON.parse(post.rh);
-      var res_time;
-      if (season == 0) {
-        res_time = {};
-        for (var i = 0; i < rh.length; ++i) {
-          res_time[rh[i].hero] = cached_distribution.fast_time[rh[i].hero];
+      var req_str = "select * from gametime where season=? and (";
+      var param = [season];
+      for (var i = 0; i < rh.length; ++i) {
+        if (season == 0) {
+          rh[i].rank = 0;
         }
-      } else {
-        res_time = [];
-        createSubset(res_time, season);
-        for (var i = 0; i < rh.length; ++i) {
-          createSubset(res_time[season], rh[i].rank);
-          var rank_time = cached_distribution.rank_time;
-          if (rank_time[season] && rank_time[season][rh[i].rank]) {
-            res_time[season][rh[i].rank][rh[i].hero] = cached_distribution.rank_time[season][rh[i].rank][rh[i].hero];
-          } else {
-            res_time[season][rh[i].rank][rh[i].hero] = {};
+        req_str += i == 0 ? "" : " or ";
+        req_str += "(rank=? and hero=?)";
+        param.push(rh[i].rank, rh[i].hero);
+      }
+      req_str += ")";
+      pool.query(req_str, param).then(function (rows) {
+        var res_time;
+        if (season == 0) {
+          res_time = {};
+          for (var i = 0; i < rows.length; ++i) {
+            var rec = rows[i];
+            createSubset(res_time, rec.hero);
+            createSubset(res_time[rec.hero], rec.date);
+            res_time[rec.hero][rec.date]["gametime"] = rec.gametime;
+            res_time[rec.hero][rec.date]["wintime"] = rec.wintime;
+          }
+        } else {
+          res_time = [];
+          createSubset(res_time, season);
+          for (var i = 0; i < rows.length; ++i) {
+            var rec = rows[i];
+            createSubset(res_time[season], rec.rank);
+            createSubset(res_time[season][rec.rank], rec.hero);
+            createSubset(res_time[season][rec.rank][rec.hero], rec.date);
+            res_time[season][rec.rank][rec.hero][rec.date]["gametime"] = rec.gametime;
+            res_time[season][rec.rank][rec.hero][rec.date]["wintime"] = rec.wintime;
           }
         }
-      }
-      res.send(JSON.stringify(res_time));
+        //console.log(res_time);
+        res.send(JSON.stringify(res_time));
+      });
     } else if (post.req == "total_time") {
       var season = post.season;
-      var ranks;
+      var ranks = [0];
       if (season != 0) {
         ranks = JSON.parse(post.ranks);
       }
-      var res_total_time;
-      if (season == 0) {
-        res_total_time = cached_distribution.total_fast_time;
-      } else {
-        res_total_time = [];
-        createSubset(res_total_time, season, []);
-        for (var i = 0; i < ranks.length; ++i) {
-          if (cached_distribution.total_rank_time[season]) {
-            res_total_time[season][ranks[i]] = cached_distribution.total_rank_time[season][ranks[i]];
-          } else {
-            res_total_time[season][ranks[i]] = [];
+      var req_str = "select * from gametime where season=? and hero=? and (";
+      var param = [season, "全部英雄"];
+      for (var i = 0; i < ranks.length; ++i) {
+        req_str += i == 0 ? "" : " or ";
+        req_str += "rank=?";
+        param.push(ranks[i]);
+      }
+      req_str += ")";
+      pool.query(req_str, param).then(function (rows) {
+        var res_total_time;
+        if (season == 0) {
+          res_total_time = {};
+          for (var i = 0; i < rows.length; ++i) {
+            var rec = rows[i];
+            res_total_time[rec.date] = rec.gametime;
+          }
+        } else {
+          res_total_time = [];
+          createSubset(res_total_time, season, []);
+          for (var i = 0; i < rows.length; ++i) {
+            var rec = rows[i];
+            createSubset(res_total_time[season], rec.rank);
+            res_total_time[season][rec.rank][rec.date] = rec.gametime;
           }
         }
-      }
-      res.send(JSON.stringify(res_total_time));
+        //console.log(res_total_time);
+        res.send(JSON.stringify(res_total_time));
+      });
     } else {
       res.status(404).send('Hack.');
     }
