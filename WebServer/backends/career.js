@@ -284,6 +284,7 @@ exports.process = function(req, res, components) {
         }
       }
       else if (common.notEmpty(post.cookie)) {
+        post.cookie = decodeURIComponent(post.cookie);
         getCareerId(['cookie', post.cookie], getCallbackFunction(res));
       } else if (common.notEmpty(post.email) && common.notEmpty(post.passwd)) {
         getCareerId(['passwd', post.email, post.passwd], getCallbackFunction(res));

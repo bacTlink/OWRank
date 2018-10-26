@@ -799,6 +799,7 @@ var owrank_data = {
     xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
     if (method == "cookie") {
       var cookie = $("#cookie").val();
+      cookie = encodeURIComponent(cookie);
       xhttp.send("cookie=" + cookie);
     } else if (method == "battletag") {
       var battletag = $("#battletag").val();
