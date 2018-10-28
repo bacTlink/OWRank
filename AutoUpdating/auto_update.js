@@ -46,8 +46,8 @@ function updateBattleTag(battletag, callback) {
   post_req.end();
 }
 
-function updateAll(conn) {
-  conn.query("select battletag from player_endor group by battletag").then(function(rows) {
+function updateAll() {
+  pool.query("select battletag from player_endor group by battletag").then(function(rows) {
     var cnt = 0, i = 0;
     if (rows.length > 0) {
       updateBattleTag(rows[i].battletag, function (done, callback) {
@@ -60,7 +60,7 @@ function updateAll(conn) {
         if (i < rows.length) {
           updateBattleTag(rows[i].battletag, callback);
         } else {
-          updateAll(conn);
+          updateAll();
         }
       });
     }
@@ -68,7 +68,5 @@ function updateAll(conn) {
 }
 
 setTimeout(function() {
-  pool.getConnection().then(function (conn) {
-    updateAll(conn);
-  });
+  updateAll();
 }, 10000);
