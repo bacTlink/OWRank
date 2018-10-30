@@ -49,6 +49,7 @@ It saves data into a randomly named file, and prints its name to standard output
 
 ## Auto Updating
 [auto_update.js](https://github.com/bacTlink/OWRank/blob/master/AutoUpdating/auto_update.js) automatically updates user data by periodically sending requests to the local web server.
+However, this no longer works due to the cookies expiring in an hour since 2018-10-25.
 
 ## Web Server
 The web server is organized by [pages](https://github.com/bacTlink/OWRank/blob/master/WebServer/page.js).

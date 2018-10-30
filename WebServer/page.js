@@ -172,7 +172,6 @@ function getNavbar(id) {
   }
   var col = lis.wrapBy('ul', {class: 'nav navbar-nav'}) + right_lis.wrapBy('ul', {class: 'nav navbar-nav navbar-right'});
   col = col.wrapBy('div', {class: 'navbar-collapse collapse', id:"owrank-navbar"});
-  col += "受10月25日晚上战网通行证不稳定的影响，原有cookie全部失效，cookie需要重新录入一次".wrapBy('h3', {class: 'panel-title'}).wrapBy('div', {class:'panel-heading'}).wrapBy('div', {class:'panel panel-danger'});
   var container = (header + col).wrapBy('div', {class:'container'});
   return container.wrapBy('nav', {class:'navbar navbar-inverse navbar-fixed-top'});
 }
