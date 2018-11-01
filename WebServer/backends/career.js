@@ -276,7 +276,8 @@ exports.process = function(req, res, components) {
         } else {
           queryCookie(post.battletag, function (results) {
             if (results.length != 1) {
-              res.status(404).send('Battle Tag Not Exist.');
+              var player_stat = {};
+              getAndUpdateData(player_stat, res, post.battletag);
               return;
             }
             getCareerId(['cookie', results[0].cookie], getCallbackFunction(res, auto_update, post.battletag));

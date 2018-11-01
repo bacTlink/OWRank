@@ -60,3 +60,5 @@ exports.getRank = function (rank) {
   if (rank < 4000) return 5;
   return 6;
 }
+
+exports.rankNames = ["青铜","白银","黄金","铂金","钻石","大师","宗师"];

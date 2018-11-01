@@ -92,7 +92,7 @@ function showChart() {
     var pre_total_time = 0;
     var pre_wintime = 0;
     var dates = Object.keys(records);
-    sortByDateAsc = function (lh, rh)  { var lhs = new Date(lh); var rhs = new Date(rh); return lhs > rhs ? 1 : lhs < rhs ? -1 : 0; };
+    var sortByDateAsc = function (lh, rh)  { var lhs = new Date(lh); var rhs = new Date(rh); return lhs > rhs ? 1 : lhs < rhs ? -1 : 0; };
     dates.sort(sortByDateAsc);
     for (var i in dates) {
       var date = dates[i];
@@ -287,6 +287,24 @@ function getDesigns() {
         + "</a></li>";
   }
   $('#design-bar').html(design_bar + getChoose(1));
+  var design_bar2 = "";
+  for (var i = 0; i < title.length; ++i) {
+    design_bar2 += "<li><a style='cursor:pointer' onclick='openDesignData(\"" + title[i] + "\")'>"
+        + title[i]
+        + '<img style="height:35px" src="http://overwatch.nos.netease.com/images/game/rank-icons/season-2/rank-' + (i + 1) + '.png">'
+        + "</a></li>";
+  }
+  $('#design-bar2').html(design_bar2);
+}
+function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  var expires = exdays == null ? "" : "expires="+ d.toUTCString() + ";";
+  document.cookie = cname + "=" + cvalue + ";" + expires;
+}
+function openDesignData(title) {
+  setCookie("dist_battletag", title + "玩家#0", 1);
+  window.open('/index', '_blank');
 }
 function getColor(hero) {
   for (var key in heroesMap) {

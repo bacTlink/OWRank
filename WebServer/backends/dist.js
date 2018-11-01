@@ -9,6 +9,79 @@ function createSubset(obj, key, add = {}) {
   obj[key] = obj[key] ? obj[key] : add;
 }
 
+function getAttr(data, name) {
+  for (var i = 0; i < data.length; ++i) {
+    if (data[i].name == name)
+      return data[i].value;
+  }
+  return null;
+}
+
+function valid(datai) {
+  if (datai.format == "percentage") return true;
+  if (datai.format == "decimal_value") return true;
+  if (datai.name == "单次存活时伤害总量") return true;
+  if (datai.format == "per_10_minutes") return true;
+  if (datai.format == "time_per_10_minutes") return true;
+  return false;
+}
+
+function addAttrs(res, data1) {
+  for (var i = 0; i < data1.length; ++i) {
+    if (valid(data1[i])) {
+      if (getAttr(res, data1[i].name) === null) {
+        res.push({
+          name: data1[i].name,
+          value: 0,
+          format: data1[i].format
+        });
+      }
+    }
+  }
+}
+
+function addData(data1, data2) {
+  var res = [];
+  var time1 = getAttr(data1, "游戏时间");
+  var time2 = getAttr(data2, "游戏时间");
+  var total_time = time1 + time2;
+  res.push({
+    name: "游戏时间",
+    value: total_time,
+    format: "duration"
+  });
+  addAttrs(res, data1);
+  addAttrs(res, data2);
+  for (var i = 1; i < res.length; ++i) {
+    var v1 = getAttr(data1, res[i].name);
+    var v2 = getAttr(data2, res[i].name);
+    res[i].value = (v1 * time1 + v2 * time2) / total_time;
+  }
+  return res;
+}
+
+function subData(data1, data2) {
+  var res = [];
+  var time1 = getAttr(data1, "游戏时间");
+  var time2 = getAttr(data2, "游戏时间");
+  if (time1 - time2 < 1e-4) {
+    return res;
+  }
+  var total_time = time1 - time2;
+  res.push({
+    name: "游戏时间",
+    value: total_time,
+    format: "duration"
+  });
+  addAttrs(res, data1);
+  for (var i = 1; i < res.length; ++i) {
+    var v1 = getAttr(data1, res[i].name);
+    var v2 = getAttr(data2, res[i].name);
+    res[i].value = (v1 * time1 - v2 * time2) / total_time;
+  }
+  return res;
+}
+
 function getNewestDistribution(start_date, end_date) {
   var connection = mysql.createConnection({
     host            : 'localhost',
@@ -16,13 +89,10 @@ function getNewestDistribution(start_date, end_date) {
     password        : '',
     database        : 'owrank'
   });
-  acctime = [];
+  var acctime = [];
+  var avg_data = [];
   connection.query('select * from profile where date>=? and date<=? order by date', [common.getSqlDate(start_date), common.getSqlDate(end_date)]).on('result', function (rec) {
     connection.pause();
-    if (rec.hero == "全部英雄") {
-      connection.resume();
-      return;
-    }
     rec.date = common.getSqlDate(rec.date);
     var data = JSON.parse(rec.json);
     var gametime = 0;
@@ -50,14 +120,15 @@ function getNewestDistribution(start_date, end_date) {
       pool.query('select * from profile where battletag=? and season=? and hero=? and date<? order by date desc limit 1', [rec.battletag, rec.season, rec.hero, rec.date]).then(function (recs) {
         var pre_gametime = 0;
         var pre_wintime = 0;
+        var data2 = [];
         if (recs[0]) {
-          var data = JSON.parse(recs[0].json);
+          data2 = JSON.parse(recs[0].json);
           var winrate = -1;
-          for (var x = 0; x < data.length; ++x) {
-            if (data[x].name == "游戏时间") {
-              pre_gametime = data[x].value;
-            } else if (data[x].name == "获胜占比") {
-              winrate = data[x].value;
+          for (var x = 0; x < data2.length; ++x) {
+            if (data2[x].name == "游戏时间") {
+              pre_gametime = data2[x].value;
+            } else if (data2[x].name == "获胜占比") {
+              winrate = data2[x].value;
             }
           }
           if (winrate != -1) {
@@ -78,11 +149,21 @@ function getNewestDistribution(start_date, end_date) {
         acctime[rec.season][rec.rank][rec.date][rec.hero]["gametime"] += gametime - pre_gametime;
         acctime[rec.season][rec.rank][rec.date][rec.hero]["wintime"] += wintime - pre_wintime;
 
+        if (rec.season > 0) {
+          createSubset(avg_data, rec.rank, []);
+          createSubset(avg_data[rec.rank], rec.season);
+          createSubset(avg_data[rec.rank][rec.season], rec.hero);
+          createSubset(avg_data[rec.rank][rec.season][rec.hero], rec.date, []);
+          avg_data[rec.rank][rec.season][rec.hero][rec.date] = addData(
+            avg_data[rec.rank][rec.season][rec.hero][rec.date],
+            subData(data, data2)
+          );
+        }
+
         connection.resume();
       });
     });
   }).on('end', function () {
-    //console.log("end");
     for (var season = 0; season < acctime.length; ++season)
     if (acctime[season] != null) {
       for (var rank = 0; rank < acctime[season].length; ++rank)
@@ -99,10 +180,39 @@ function getNewestDistribution(start_date, end_date) {
               pool.query("insert into gametime (season, rank, hero, date, gametime, wintime) values (?, ?, ?, ?, ?, ?) on duplicate key update gametime=?, wintime=?", [season, rank, hero, date, rec["gametime"], rec["wintime"], rec["gametime"], rec["wintime"]]);
             }
           }
-          //console.log(season, rank, date, "全部英雄", total_gametime, total_wintime);
           if (total_gametime > 0 || total_wintime > 0) {
             pool.query("insert into gametime (season, rank, hero, date, gametime, wintime) values (?, ?, ?, ?, ?, ?) on duplicate key update gametime=?, wintime=?", [season, rank, "全部英雄", date, total_gametime, total_wintime, total_gametime, total_wintime]);
           }
+        }
+      }
+    }
+    for (var rank = 0; rank < avg_data.length; ++rank)
+    if (avg_data[rank] != null) {
+      var battletag = common.rankNames[rank] + "玩家#0";
+      for (var season = 0; season < avg_data[rank].length; ++season)
+      if (avg_data[rank][season] != null) {
+        for (var hero in avg_data[rank][season])
+        if (avg_data[rank][season].hasOwnProperty(hero)) {
+          (function (battletag, rank, season, hero) {
+            pool.query("select * from profile where battletag=? and season=? and hero=? and date<? order by date desc limit 1", [battletag, season, hero, start_date]).then(function (rows) {
+              var data = [];
+              if (rows[0]) {
+                data = JSON.parse(rows[0].json);
+              }
+              var dates = Object.keys(avg_data[rank][season][hero]);
+              var sortByDateAsc = function (lh, rh)  { var lhs = new Date(lh); var rhs = new Date(rh); return lhs > rhs ? 1 : lhs < rhs ? -1 : 0; };
+              dates.sort(sortByDateAsc);
+              var avg = avg_data[rank][season][hero];
+              avg[dates[0]] = addData(avg[dates[0]], data);
+              for (var i = 1; i < dates.length; ++i) {
+                avg[dates[i]] = addData(avg[dates[i - 1]], avg[dates[i]]);
+              }
+              for (var i = 0; i < dates.length; ++i) {
+                var json = JSON.stringify(avg[dates[i]]);
+                pool.query("insert into profile (battletag, season, hero, date, json) values (?, ?, ?, ?, ?) on duplicate key update json=?", [battletag, season, hero, dates[i], json, json]);
+              }
+            });
+          })(battletag, rank, season, hero);
         }
       }
     }
@@ -110,7 +220,7 @@ function getNewestDistribution(start_date, end_date) {
   });
 }
 
-//getNewestDistribution(new Date("2018-10-01"), new Date("2018-11-01"));
+//getNewestDistribution(new Date("2018-10-20"), new Date("2018-10-31"));
 
 function update3day() {
   var b = new Date();

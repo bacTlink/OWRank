@@ -78,7 +78,9 @@ var owrank_data = {
   },
   showPlayerMessage: function() {
     $("#user-name").html(this.data.player.name + "的生涯");
-    $("#level").html(this.data.player.level);
+    var level = this.data.player.level;
+    level = level ? level : 0;
+    $("#level").html(level);
     var endor = this.data.player.endorsement;
     $("#endor-level").html(endor.level);
     var total = endor.sportsmanship+endor.teammate+endor.shotcaller;
@@ -387,6 +389,9 @@ var owrank_data = {
       if (this.data.seasons[i] == null) {
         continue;
       }
+      if (this.cur_season == -1) {
+        this.cur_season = i;
+      }
       var season_title = i == 0 ? "快速游戏" : "第" + i + "赛季";
       bar.html(bar.html()+"<li class=\"\" role=\"presentation\" id=\"season-bar-" + i + "\" onclick=\"owrank_data.setSeason(" + i + ");\"><a style=\"cursor:pointer\">" + season_title + "</a></li>");
       this.showSeasonDetailData(i,"游戏时间");
@@ -404,10 +409,9 @@ var owrank_data = {
       }
       this.getSeasonRankChart(i);
     }
-    this.cur_season = 0;
-    var season_bar = $("#season-bar-0");
+    var season_bar = $("#season-bar-" + this.cur_season);
     season_bar.addClass("active");
-    var season_data = $("#season-data-0");
+    var season_data = $("#season-data-" + this.cur_season);
     season_data.show();
   },
   cur_category: -1,
@@ -750,7 +754,10 @@ var owrank_data = {
     this.showModalBody(hero_data);
   },
   showData: function(data) {
-    setCookie('battletag', data.player.name, 30);
+    if (data.player.name[data.player.name.length - 1] != '0' ||
+        data.player.name[data.player.name.length - 2] != '#') {
+      setCookie('battletag', data.player.name, 30);
+    }
     setCookie('no_update', 'true', null);
     this.history_career = [];
     this.data = data;
@@ -1350,10 +1357,20 @@ var owrank_data = {
   owrank_data.hero_history_chart = new Chart(ctx, owrank_data.hero_history_chart_config);
 }
 $(document).ready(function() {
-  if (getCookie('battletag')) {
-    var battletag = getCookie('battletag');
+  var battletag = null;
+  var dist_btg = false;
+  if (getCookie('dist_battletag')) {
+    battletag = getCookie('dist_battletag');
+    dist_btg = true;
+  } else if (getCookie('battletag')) {
+    battletag = getCookie('battletag');
+  }
+  if (battletag) {
     $('#battletag-a').click();
     $('#battletag').val(battletag);
     $('#submit-button').click();
+  }
+  if (dist_btg) {
+    setCookie('dist_battletag', '', 0);
   }
 });
