@@ -268,6 +268,11 @@ exports.process = function (req, res, components) {
       var rh = JSON.parse(post.rh);
       var req_str = "select * from gametime where season=? and (";
       var param = [season];
+      var res_time = {};
+      if (season != 0) {
+        res_time = [];
+        createSubset(res_time, season);
+      }
       for (var i = 0; i < rh.length; ++i) {
         if (season == 0) {
           rh[i].rank = 0;
@@ -275,26 +280,25 @@ exports.process = function (req, res, components) {
         req_str += i == 0 ? "" : " or ";
         req_str += "(rank=? and hero=?)";
         param.push(rh[i].rank, rh[i].hero);
+        if (season == 0) {
+          createSubset(res_time, rh[i].hero);
+        } else {
+          createSubset(res_time[season], rh[i].rank);
+          createSubset(res_time[season][rh[i].rank], rh[i].hero);
+        }
       }
       req_str += ")";
       pool.query(req_str, param).then(function (rows) {
-        var res_time;
         if (season == 0) {
-          res_time = {};
           for (var i = 0; i < rows.length; ++i) {
             var rec = rows[i];
-            createSubset(res_time, rec.hero);
             createSubset(res_time[rec.hero], rec.date);
             res_time[rec.hero][rec.date]["gametime"] = rec.gametime;
             res_time[rec.hero][rec.date]["wintime"] = rec.wintime;
           }
         } else {
-          res_time = [];
-          createSubset(res_time, season);
           for (var i = 0; i < rows.length; ++i) {
             var rec = rows[i];
-            createSubset(res_time[season], rec.rank);
-            createSubset(res_time[season][rec.rank], rec.hero);
             createSubset(res_time[season][rec.rank][rec.hero], rec.date);
             res_time[season][rec.rank][rec.hero][rec.date]["gametime"] = rec.gametime;
             res_time[season][rec.rank][rec.hero][rec.date]["wintime"] = rec.wintime;
